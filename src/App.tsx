@@ -35,6 +35,7 @@ const DiagnosisRecords = lazy(() => import('./pages/DiagnosisRecords'));
 const VaccinationRecords = lazy(() => import('./pages/VaccinationRecords'));
 const OCRDocumentRecognition = lazy(() => import('./pages/OCRDocumentRecognition'));
 const CareRecords = lazy(() => import('./pages/CareRecords'));
+const MobileAppPreview = lazy(() => import('./pages/mobile-app/MobileAppPreview'));
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-64">
