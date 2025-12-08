@@ -68,6 +68,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onSignOut }) => {
     { name: '列印表格', href: '/print-forms', icon: Printer },
     { name: '任務管理', href: '/tasks', icon: Clock },
     { name: '報表查詢', href: '/reports', icon: BarChart3 },
+    { name: '📱 護理記錄App', href: '/mobile-app', icon: Smartphone },
   ];
 
   const isActive = (path: string) => location.pathname === path;
