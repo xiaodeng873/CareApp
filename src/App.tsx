@@ -116,6 +116,7 @@ function AppContent() {
             <Route path="/health" element={<HealthAssessment />} />
             <Route path="/health-assessments" element={<HealthAssessments />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/mobile-app" element={<MobileAppPreview />} />
           </Routes>
         </Suspense>
       </Layout>
