@@ -6,11 +6,21 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Platform,
+  TextInput,
 } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getBedByQrCodeId, getPatientByBedId } from '../lib/database';
+
+// Conditionally import camera for native platforms
+let CameraView: any = null;
+let useCameraPermissions: any = null;
+if (Platform.OS !== 'web') {
+  const cameraModule = require('expo-camera');
+  CameraView = cameraModule.CameraView;
+  useCameraPermissions = cameraModule.useCameraPermissions;
+}
 
 const ScanScreen: React.FC = () => {
   const navigation = useNavigation<any>();
