@@ -386,54 +386,46 @@ const CareRecordsScreen: React.FC = () => {
   );
 
   const renderPositionTable = () => (
-    <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-      <View>
-        {renderDateHeader()}
-        {TIME_SLOTS.map((timeSlot, idx) => {
-          const positions = ['左', '平', '右'];
-          const expectedPosition = positions[idx % 3];
-          
-          return (
-            <View key={timeSlot} style={styles.tableRow}>
-              <View style={styles.timeSlotCell}>
-                <Text style={styles.timeSlotText}>{timeSlot}</Text>
-              </View>
-              {weekDates.map((date, index) => {
-                const dateString = weekDateStrings[index];
-                const record = positionChangeRecords.find(
-                  (r) => r.change_date === dateString && r.scheduled_time === timeSlot
-                );
-                const inHospital = isInHospital(patient, dateString, timeSlot, admissionRecords);
+    <View>
+      {renderDateHeader()}
+      {TIME_SLOTS.map((timeSlot, idx) => {
+        const positions = ['左', '平', '右'];
+        const expectedPosition = positions[idx % 3];
+        const dateString = selectedDateString;
+        const record = positionChangeRecords.find(
+          (r) => r.change_date === dateString && r.scheduled_time === timeSlot
+        );
+        const inHospital = isInHospital(patient, dateString, timeSlot, admissionRecords);
 
-                return (
-                  <TouchableOpacity
-                    key={dateString}
-                    style={[
-                      styles.dataCell,
-                      inHospital && styles.hospitalCell,
-                      record && !inHospital && styles.completedCellPurple,
-                    ]}
-                    onPress={() => !inHospital && handleCellPress(dateString, timeSlot, record)}
-                    disabled={inHospital}
-                  >
-                    {inHospital ? (
-                      <Text style={styles.hospitalText}>入院</Text>
-                    ) : record ? (
-                      <View style={styles.completedContent}>
-                        <Text style={styles.positionText}>{record.position}</Text>
-                        <Text style={styles.recorderText}>{record.recorder}</Text>
-                      </View>
-                    ) : (
-                      <Text style={styles.pendingText}>[{expectedPosition}]</Text>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
+        return (
+          <View key={timeSlot} style={styles.tableRow}>
+            <View style={styles.timeSlotCell}>
+              <Text style={styles.timeSlotText}>{timeSlot}</Text>
             </View>
-          );
-        })}
-      </View>
-    </ScrollView>
+            <TouchableOpacity
+              style={[
+                styles.singleDataCell,
+                inHospital && styles.hospitalCell,
+                record && !inHospital && styles.completedCellPurple,
+              ]}
+              onPress={() => !inHospital && handleCellPress(dateString, timeSlot, record)}
+              disabled={inHospital}
+            >
+              {inHospital ? (
+                <Text style={styles.hospitalText}>入院</Text>
+              ) : record ? (
+                <View style={styles.completedContent}>
+                  <Text style={styles.positionText}>{record.position}</Text>
+                  <Text style={styles.recorderText}>{record.recorder}</Text>
+                </View>
+              ) : (
+                <Text style={styles.pendingText}>[{expectedPosition}]</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        );
+      })}
+    </View>
   );
 
   const renderDevelopingPlaceholder = (tabName: string) => (
