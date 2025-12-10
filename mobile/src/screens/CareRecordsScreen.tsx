@@ -176,7 +176,7 @@ const CareRecordsScreen: React.FC = () => {
       contentContainerStyle={styles.tabsContent}
     >
       {(Object.keys(TAB_CONFIG) as TabType[]).map((tab) => (
-        <TouchableOpacity
+        <Pressable
           key={tab}
           style={[styles.tab, activeTab === tab && styles.tabActive]}
           onPress={() => setActiveTab(tab)}
@@ -189,7 +189,7 @@ const CareRecordsScreen: React.FC = () => {
           <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
             {TAB_CONFIG[tab].label}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       ))}
     </ScrollView>
   );
