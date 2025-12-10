@@ -203,24 +203,24 @@ const CareRecordsScreen: React.FC = () => {
 
     return (
       <View style={styles.dateNavigation}>
-        <TouchableOpacity style={styles.navButton} onPress={handlePreviousDay}>
+        <Pressable style={styles.navButton} onPress={handlePreviousDay}>
           <Ionicons name="chevron-back" size={24} color="#374151" />
           <Text style={styles.navButtonText}>昨天</Text>
-        </TouchableOpacity>
+        </Pressable>
         
-        <TouchableOpacity 
+        <Pressable 
           style={[styles.currentDayButton, isToday() && styles.currentDayButtonActive]} 
           onPress={handleToday}
         >
           <Text style={[styles.currentDayButtonText, isToday() && styles.currentDayButtonTextActive]}>
             {isToday() ? '今天' : formatDisplayDate()}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
         
-        <TouchableOpacity style={styles.navButton} onPress={handleNextDay}>
+        <Pressable style={styles.navButton} onPress={handleNextDay}>
           <Text style={styles.navButtonText}>明天</Text>
           <Ionicons name="chevron-forward" size={24} color="#374151" />
-        </TouchableOpacity>
+        </Pressable>
       </View>
     );
   };
