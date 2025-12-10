@@ -566,47 +566,50 @@ const styles = StyleSheet.create({
     color: '#2563eb',
     fontWeight: '600',
   },
-  weekNavigation: {
+  dateNavigation: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 16,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
   },
-  weekButton: {
+  navButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     backgroundColor: '#f3f4f6',
-    borderRadius: 8,
-    marginHorizontal: 8,
+    borderRadius: 12,
+    minWidth: 90,
+    justifyContent: 'center',
   },
-  weekButtonText: {
-    fontSize: 14,
+  navButtonText: {
+    fontSize: 15,
     color: '#374151',
+    fontWeight: '500',
+    marginHorizontal: 4,
   },
-  currentWeekButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
+  currentDayButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    minWidth: 140,
+    alignItems: 'center',
+  },
+  currentDayButtonActive: {
     backgroundColor: '#2563eb',
-    borderRadius: 8,
   },
-  currentWeekButtonText: {
-    fontSize: 14,
-    color: '#ffffff',
+  currentDayButtonText: {
+    fontSize: 15,
+    color: '#374151',
     fontWeight: '600',
   },
-  dateRangeContainer: {
-    alignItems: 'center',
-    paddingVertical: 8,
-    backgroundColor: '#ffffff',
-  },
-  dateRangeText: {
-    fontSize: 13,
-    color: '#6b7280',
+  currentDayButtonTextActive: {
+    color: '#ffffff',
   },
   tableContainer: {
     flex: 1,
