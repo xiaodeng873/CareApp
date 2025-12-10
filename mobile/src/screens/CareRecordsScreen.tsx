@@ -330,64 +330,59 @@ const CareRecordsScreen: React.FC = () => {
   );
 
   const renderRestraintTable = () => (
-    <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-      <View>
-        {renderDateHeader()}
-        {TIME_SLOTS.map((timeSlot) => (
+    <View>
+      {renderDateHeader()}
+      {TIME_SLOTS.map((timeSlot) => {
+        const dateString = selectedDateString;
+        const record = restraintObservationRecords.find(
+          (r) => r.observation_date === dateString && r.scheduled_time === timeSlot
+        );
+        const inHospital = isInHospital(patient, dateString, timeSlot, admissionRecords);
+
+        const getCellStyle = () => {
+          if (inHospital) return styles.hospitalCell;
+          if (!record) return {};
+          switch (record.observation_status) {
+            case 'N': return styles.completedCell;
+            case 'P': return styles.problemCell;
+            case 'S': return styles.pausedCell;
+            default: return {};
+          }
+        };
+
+        return (
           <View key={timeSlot} style={styles.tableRow}>
             <View style={styles.timeSlotCell}>
               <Text style={styles.timeSlotText}>{timeSlot}</Text>
             </View>
-            {weekDates.map((date, index) => {
-              const dateString = weekDateStrings[index];
-              const record = restraintObservationRecords.find(
-                (r) => r.observation_date === dateString && r.scheduled_time === timeSlot
-              );
-              const inHospital = isInHospital(patient, dateString, timeSlot, admissionRecords);
-
-              const getCellStyle = () => {
-                if (inHospital) return styles.hospitalCell;
-                if (!record) return {};
-                switch (record.observation_status) {
-                  case 'N': return styles.completedCell;
-                  case 'P': return styles.problemCell;
-                  case 'S': return styles.pausedCell;
-                  default: return {};
-                }
-              };
-
-              return (
-                <TouchableOpacity
-                  key={dateString}
-                  style={[styles.dataCell, getCellStyle()]}
-                  onPress={() => !inHospital && handleCellPress(dateString, timeSlot, record)}
-                  disabled={inHospital}
-                >
-                  {inHospital ? (
-                    <Text style={styles.hospitalText}>入院</Text>
-                  ) : record ? (
-                    <View style={styles.completedContent}>
-                      <Text style={[
-                        styles.statusText,
-                        record.observation_status === 'N' && styles.statusNormal,
-                        record.observation_status === 'P' && styles.statusProblem,
-                        record.observation_status === 'S' && styles.statusPaused,
-                      ]}>
-                        {record.observation_status === 'N' ? '🟢N' :
-                         record.observation_status === 'P' ? '🔴P' : '🟠S'}
-                      </Text>
-                      <Text style={styles.recorderText}>{record.recorder}</Text>
-                    </View>
-                  ) : (
-                    <Text style={styles.pendingText}>待觀察</Text>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
+            <TouchableOpacity
+              style={[styles.singleDataCell, getCellStyle()]}
+              onPress={() => !inHospital && handleCellPress(dateString, timeSlot, record)}
+              disabled={inHospital}
+            >
+              {inHospital ? (
+                <Text style={styles.hospitalText}>入院</Text>
+              ) : record ? (
+                <View style={styles.completedContent}>
+                  <Text style={[
+                    styles.statusText,
+                    record.observation_status === 'N' && styles.statusNormal,
+                    record.observation_status === 'P' && styles.statusProblem,
+                    record.observation_status === 'S' && styles.statusPaused,
+                  ]}>
+                    {record.observation_status === 'N' ? '🟢N' :
+                     record.observation_status === 'P' ? '🔴P' : '🟠S'}
+                  </Text>
+                  <Text style={styles.recorderText}>{record.recorder}</Text>
+                </View>
+              ) : (
+                <Text style={styles.pendingText}>待觀察</Text>
+              )}
+            </TouchableOpacity>
           </View>
-        ))}
-      </View>
-    </ScrollView>
+        );
+      })}
+    </View>
   );
 
   const renderPositionTable = () => (
