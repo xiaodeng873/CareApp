@@ -468,12 +468,7 @@ const CareRecordsScreen: React.FC = () => {
     <View style={styles.container}>
       {renderPatientHeader()}
       {renderTabs()}
-      {renderWeekNavigation()}
-      <View style={styles.dateRangeContainer}>
-        <Text style={styles.dateRangeText}>
-          📅 {weekDateStrings[0]} - {weekDateStrings[6]}
-        </Text>
-      </View>
+      {renderDateNavigation()}
       <ScrollView
         style={styles.tableContainer}
         refreshControl={
