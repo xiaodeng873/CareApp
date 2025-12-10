@@ -3,7 +3,7 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -85,7 +85,7 @@ const LoginScreen: React.FC = () => {
               secureTextEntry={!showPassword}
               editable={!loading}
             />
-            <TouchableOpacity
+            <Pressable
               onPress={() => setShowPassword(!showPassword)}
               style={styles.eyeButton}
             >
@@ -94,11 +94,15 @@ const LoginScreen: React.FC = () => {
                 size={20}
                 color="#6b7280"
               />
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
-          <TouchableOpacity
-            style={[styles.loginButton, loading && styles.loginButtonDisabled]}
+          <Pressable
+            style={({ pressed }) => [
+              styles.loginButton,
+              loading && styles.loginButtonDisabled,
+              pressed && !loading && styles.loginButtonPressed
+            ]}
             onPress={handleLogin}
             disabled={loading}
           >
@@ -107,7 +111,7 @@ const LoginScreen: React.FC = () => {
             ) : (
               <Text style={styles.loginButtonText}>登入</Text>
             )}
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         <View style={styles.footer}>
