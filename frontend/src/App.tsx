@@ -23,7 +23,13 @@ import {
   Eye,
   EyeOff,
   ArrowLeft,
-  Loader2
+  Loader2,
+  Clock,
+  FileText,
+  Trash2,
+  Calendar,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 import './App.css';
 
@@ -44,8 +50,10 @@ interface PatrolRound {
   id: string;
   patient_id: number;
   patrol_date: string;
+  patrol_time: string;
   scheduled_time: string;
   recorder: string;
+  notes?: string;
 }
 
 interface DiaperChangeRecord {
@@ -56,6 +64,10 @@ interface DiaperChangeRecord {
   has_urine: boolean;
   has_stool: boolean;
   has_none: boolean;
+  urine_amount?: string;
+  stool_color?: string;
+  stool_texture?: string;
+  stool_amount?: string;
   recorder: string;
 }
 
@@ -72,16 +84,75 @@ interface RestraintObservationRecord {
   id: string;
   patient_id: number;
   observation_date: string;
+  observation_time: string;
   scheduled_time: string;
   observation_status: 'N' | 'P' | 'S';
   recorder: string;
+  notes?: string;
 }
 
-type TabType = 'home' | 'scan' | 'settings';
+type TabType = 'scan' | 'home' | 'settings';
 type CareTabType = 'patrol' | 'diaper' | 'intake_output' | 'restraint' | 'position' | 'toilet_training';
+type ModalType = 'patrol' | 'diaper' | 'restraint' | 'position' | null;
 
 const TIME_SLOTS = ['07:00', '09:00', '11:00', '13:00', '15:00', '17:00', '19:00', '21:00', '23:00', '01:00', '03:00', '05:00'];
 const DIAPER_SLOTS = ['7AM-10AM', '11AM-2PM', '3PM-6PM', '7PM-10PM', '11PM-2AM', '3AM-6AM'];
+
+// 香港時區工具函數
+const getHongKongTime = () => {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Hong_Kong' }));
+};
+
+const getHongKongDateString = () => {
+  const hkTime = getHongKongTime();
+  return hkTime.toISOString().split('T')[0];
+};
+
+const getHongKongTimeString = () => {
+  const hkTime = getHongKongTime();
+  return `${String(hkTime.getHours()).padStart(2, '0')}:${String(hkTime.getMinutes()).padStart(2, '0')}`;
+};
+
+// 檢查時段是否逾期
+const isTimeSlotOverdue = (date: string, timeSlot: string): boolean => {
+  const hkNow = getHongKongTime();
+  const today = getHongKongDateString();
+  
+  if (date < today) return true;
+  if (date > today) return false;
+  
+  // 今天的情況，比較時間
+  const currentMinutes = hkNow.getHours() * 60 + hkNow.getMinutes();
+  
+  // 解析時段
+  let slotEndMinutes = 0;
+  if (timeSlot.includes('AM') || timeSlot.includes('PM')) {
+    // DIAPER_SLOTS 格式
+    const match = timeSlot.match(/(\d+)(AM|PM)-(\d+)(AM|PM)/);
+    if (match) {
+      let endHour = parseInt(match[3]);
+      if (match[4] === 'PM' && endHour !== 12) endHour += 12;
+      if (match[4] === 'AM' && endHour === 12) endHour = 0;
+      slotEndMinutes = endHour * 60;
+    }
+  } else {
+    // TIME_SLOTS 格式 (HH:MM)
+    const [hours, minutes] = timeSlot.split(':').map(Number);
+    // 給予 2 小時的緩衝時間
+    slotEndMinutes = hours * 60 + minutes + 120;
+  }
+  
+  return currentMinutes > slotEndMinutes;
+};
+
+const addRandomOffset = (baseTime: string): string => {
+  const [hours, minutes] = baseTime.split(':').map(Number);
+  const randomOffset = Math.floor(Math.random() * 5) - 2;
+  const totalMinutes = hours * 60 + minutes + randomOffset;
+  const newHours = Math.floor(totalMinutes / 60) % 24;
+  const newMinutes = totalMinutes % 60;
+  return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
+};
 
 // Auth Context
 interface AuthContextType {
@@ -211,42 +282,397 @@ const LoginScreen: React.FC = () => {
   );
 };
 
+// Modal Components
+interface ModalProps {
+  patient: Patient;
+  date: string;
+  timeSlot: string;
+  staffName: string;
+  onClose: () => void;
+}
+
+const PatrolModal: React.FC<ModalProps & { existingRecord?: PatrolRound | null; onSubmit: (data: any) => void; onDelete?: (id: string) => void }> = ({
+  patient, date, timeSlot, staffName, existingRecord, onClose, onSubmit, onDelete
+}) => {
+  const [patrolTime, setPatrolTime] = useState(existingRecord?.patrol_time || addRandomOffset(timeSlot));
+  const [recorder, setRecorder] = useState(existingRecord?.recorder || staffName);
+  const [notes, setNotes] = useState(existingRecord?.notes || '');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit({
+      patient_id: patient.院友id,
+      patrol_date: date,
+      scheduled_time: timeSlot,
+      patrol_time: patrolTime,
+      recorder,
+      notes: notes.trim() || undefined
+    });
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h2>{existingRecord ? '查看/編輯巡房記錄' : '新增巡房記錄'}</h2>
+          <button onClick={onClose} className="modal-close"><X size={20} /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="modal-form">
+          <div className="form-row">
+            <label>院友姓名</label>
+            <input type="text" value={patient.中文姓名} disabled />
+          </div>
+          <div className="form-row">
+            <label>巡房日期</label>
+            <input type="text" value={date} disabled />
+          </div>
+          <div className="form-row">
+            <label>預定時段</label>
+            <input type="text" value={timeSlot} disabled />
+          </div>
+          <div className="form-row">
+            <label><Clock size={16} /> 實際巡房時間 *</label>
+            <input type="time" value={patrolTime} onChange={(e) => setPatrolTime(e.target.value)} required />
+          </div>
+          <div className="form-row">
+            <label><User size={16} /> 記錄者 *</label>
+            <input type="text" value={recorder} onChange={(e) => setRecorder(e.target.value)} required />
+          </div>
+          <div className="form-row">
+            <label><FileText size={16} /> 備註</label>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="選填，如有特殊情況請記錄" />
+          </div>
+          <div className="modal-actions">
+            {existingRecord && onDelete && (
+              <button type="button" onClick={() => onDelete(existingRecord.id)} className="btn-delete">
+                <Trash2 size={16} /> 刪除
+              </button>
+            )}
+            <div className="modal-actions-right">
+              <button type="button" onClick={onClose} className="btn-cancel">取消</button>
+              <button type="submit" className="btn-submit">{existingRecord ? '更新記錄' : '確認巡房'}</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const DiaperModal: React.FC<ModalProps & { existingRecord?: DiaperChangeRecord | null; onSubmit: (data: any) => void; onDelete?: (id: string) => void }> = ({
+  patient, date, timeSlot, staffName, existingRecord, onClose, onSubmit, onDelete
+}) => {
+  const [hasUrine, setHasUrine] = useState(existingRecord?.has_urine || false);
+  const [hasStool, setHasStool] = useState(existingRecord?.has_stool || false);
+  const [hasNone, setHasNone] = useState(existingRecord?.has_none || false);
+  const [urineAmount, setUrineAmount] = useState(existingRecord?.urine_amount || '');
+  const [stoolColor, setStoolColor] = useState(existingRecord?.stool_color || '');
+  const [stoolTexture, setStoolTexture] = useState(existingRecord?.stool_texture || '');
+  const [stoolAmount, setStoolAmount] = useState(existingRecord?.stool_amount || '');
+  const [recorder, setRecorder] = useState(existingRecord?.recorder || staffName);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!hasUrine && !hasStool && !hasNone) {
+      alert('請選擇排泄情況');
+      return;
+    }
+    onSubmit({
+      patient_id: patient.院友id,
+      change_date: date,
+      time_slot: timeSlot,
+      has_urine: hasUrine,
+      has_stool: hasStool,
+      has_none: hasNone,
+      urine_amount: urineAmount || undefined,
+      stool_color: stoolColor || undefined,
+      stool_texture: stoolTexture || undefined,
+      stool_amount: stoolAmount || undefined,
+      recorder
+    });
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h2>{existingRecord ? '查看/編輯換片記錄' : '新增換片記錄'}</h2>
+          <button onClick={onClose} className="modal-close"><X size={20} /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="modal-form">
+          <div className="form-row">
+            <label>院友姓名</label>
+            <input type="text" value={patient.中文姓名} disabled />
+          </div>
+          <div className="form-row">
+            <label>日期 / 時段</label>
+            <input type="text" value={`${date} / ${timeSlot}`} disabled />
+          </div>
+          <div className="form-row">
+            <label>排泄情況 *</label>
+            <div className="checkbox-group">
+              <label className={`checkbox-item ${hasUrine ? 'active' : ''}`}>
+                <input type="checkbox" checked={hasUrine} onChange={(e) => { setHasUrine(e.target.checked); if (e.target.checked) setHasNone(false); }} />
+                小便
+              </label>
+              <label className={`checkbox-item ${hasStool ? 'active' : ''}`}>
+                <input type="checkbox" checked={hasStool} onChange={(e) => { setHasStool(e.target.checked); if (e.target.checked) setHasNone(false); }} />
+                大便
+              </label>
+              <label className={`checkbox-item ${hasNone ? 'active' : ''}`}>
+                <input type="checkbox" checked={hasNone} onChange={(e) => { setHasNone(e.target.checked); if (e.target.checked) { setHasUrine(false); setHasStool(false); } }} />
+                無
+              </label>
+            </div>
+          </div>
+          {hasUrine && (
+            <div className="form-row">
+              <label>小便量</label>
+              <div className="option-group">
+                {['少', '中', '多'].map(opt => (
+                  <button key={opt} type="button" className={`option-btn ${urineAmount === opt ? 'active' : ''}`} onClick={() => setUrineAmount(opt)}>{opt}</button>
+                ))}
+              </div>
+            </div>
+          )}
+          {hasStool && (
+            <>
+              <div className="form-row">
+                <label>大便顏色</label>
+                <div className="option-group">
+                  {['黃', '唡', '綠', '黑', '紅'].map(opt => (
+                    <button key={opt} type="button" className={`option-btn ${stoolColor === opt ? 'active' : ''}`} onClick={() => setStoolColor(opt)}>{opt}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="form-row">
+                <label>大便質地</label>
+                <div className="option-group">
+                  {['硬', '軟', '稀', '水狀'].map(opt => (
+                    <button key={opt} type="button" className={`option-btn ${stoolTexture === opt ? 'active' : ''}`} onClick={() => setStoolTexture(opt)}>{opt}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="form-row">
+                <label>大便量</label>
+                <div className="option-group">
+                  {['少', '中', '多'].map(opt => (
+                    <button key={opt} type="button" className={`option-btn ${stoolAmount === opt ? 'active' : ''}`} onClick={() => setStoolAmount(opt)}>{opt}</button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+          <div className="form-row">
+            <label><User size={16} /> 記錄者 *</label>
+            <input type="text" value={recorder} onChange={(e) => setRecorder(e.target.value)} required />
+          </div>
+          <div className="modal-actions">
+            {existingRecord && onDelete && (
+              <button type="button" onClick={() => onDelete(existingRecord.id)} className="btn-delete">
+                <Trash2 size={16} /> 刪除
+              </button>
+            )}
+            <div className="modal-actions-right">
+              <button type="button" onClick={onClose} className="btn-cancel">取消</button>
+              <button type="submit" className="btn-submit">{existingRecord ? '更新記錄' : '確認記錄'}</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const RestraintModal: React.FC<ModalProps & { existingRecord?: RestraintObservationRecord | null; onSubmit: (data: any) => void; onDelete?: (id: string) => void }> = ({
+  patient, date, timeSlot, staffName, existingRecord, onClose, onSubmit, onDelete
+}) => {
+  const [observationTime, setObservationTime] = useState(existingRecord?.observation_time || addRandomOffset(timeSlot));
+  const [observationStatus, setObservationStatus] = useState<'N' | 'P' | 'S'>(existingRecord?.observation_status || 'N');
+  const [recorder, setRecorder] = useState(existingRecord?.recorder || staffName);
+  const [notes, setNotes] = useState(existingRecord?.notes || '');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit({
+      patient_id: patient.院友id,
+      observation_date: date,
+      observation_time: observationTime,
+      scheduled_time: timeSlot,
+      observation_status: observationStatus,
+      recorder,
+      notes: notes.trim() || undefined
+    });
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h2>{existingRecord ? '查看/編輯約束觀察' : '新增約束觀察'}</h2>
+          <button onClick={onClose} className="modal-close"><X size={20} /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="modal-form">
+          <div className="form-row">
+            <label>院友姓名</label>
+            <input type="text" value={patient.中文姓名} disabled />
+          </div>
+          <div className="form-row">
+            <label>日期 / 預定時段</label>
+            <input type="text" value={`${date} / ${timeSlot}`} disabled />
+          </div>
+          <div className="form-row">
+            <label><Clock size={16} /> 實際觀察時間 *</label>
+            <input type="time" value={observationTime} onChange={(e) => setObservationTime(e.target.value)} required />
+          </div>
+          <div className="form-row">
+            <label>觀察狀態 *</label>
+            <div className="status-group">
+              <button type="button" className={`status-btn normal ${observationStatus === 'N' ? 'active' : ''}`} onClick={() => setObservationStatus('N')}>
+                🟢 正常 (N)
+              </button>
+              <button type="button" className={`status-btn problem ${observationStatus === 'P' ? 'active' : ''}`} onClick={() => setObservationStatus('P')}>
+                🔴 異常 (P)
+              </button>
+              <button type="button" className={`status-btn paused ${observationStatus === 'S' ? 'active' : ''}`} onClick={() => setObservationStatus('S')}>
+                🟠 暫停 (S)
+              </button>
+            </div>
+          </div>
+          <div className="form-row">
+            <label><User size={16} /> 記錄者 *</label>
+            <input type="text" value={recorder} onChange={(e) => setRecorder(e.target.value)} required />
+          </div>
+          <div className="form-row">
+            <label><FileText size={16} /> 備註</label>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="選填" />
+          </div>
+          <div className="modal-actions">
+            {existingRecord && onDelete && (
+              <button type="button" onClick={() => onDelete(existingRecord.id)} className="btn-delete">
+                <Trash2 size={16} /> 刪除
+              </button>
+            )}
+            <div className="modal-actions-right">
+              <button type="button" onClick={onClose} className="btn-cancel">取消</button>
+              <button type="submit" className="btn-submit">{existingRecord ? '更新記錄' : '確認記錄'}</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const PositionModal: React.FC<ModalProps & { existingRecord?: PositionChangeRecord | null; onSubmit: (data: any) => void; onDelete?: (id: string) => void; suggestedPosition: '左' | '平' | '右' }> = ({
+  patient, date, timeSlot, staffName, existingRecord, onClose, onSubmit, onDelete, suggestedPosition
+}) => {
+  const [position, setPosition] = useState<'左' | '平' | '右'>(existingRecord?.position || suggestedPosition);
+  const [recorder, setRecorder] = useState(existingRecord?.recorder || staffName);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit({
+      patient_id: patient.院友id,
+      change_date: date,
+      scheduled_time: timeSlot,
+      position,
+      recorder
+    });
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h2>{existingRecord ? '查看/編輯轉身記錄' : '新增轉身記錄'}</h2>
+          <button onClick={onClose} className="modal-close"><X size={20} /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="modal-form">
+          <div className="form-row">
+            <label>院友姓名</label>
+            <input type="text" value={patient.中文姓名} disabled />
+          </div>
+          <div className="form-row">
+            <label>日期 / 預定時段</label>
+            <input type="text" value={`${date} / ${timeSlot}`} disabled />
+          </div>
+          <div className="info-box">
+            <RotateCcw size={20} color="#2563eb" />
+            <div>
+              <strong>轉身順序提示</strong>
+              <p>左 → 平 → 右 → 左（循環）</p>
+            </div>
+          </div>
+          <div className="form-row">
+            <label>轉身位置 *</label>
+            <div className="position-group">
+              {(['左', '平', '右'] as const).map(pos => (
+                <button key={pos} type="button" className={`position-btn ${position === pos ? 'active' : ''}`} onClick={() => setPosition(pos)}>
+                  {pos}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="form-row">
+            <label><User size={16} /> 記錄者 *</label>
+            <input type="text" value={recorder} onChange={(e) => setRecorder(e.target.value)} required />
+          </div>
+          <div className="modal-actions">
+            {existingRecord && onDelete && (
+              <button type="button" onClick={() => onDelete(existingRecord.id)} className="btn-delete">
+                <Trash2 size={16} /> 刪除
+              </button>
+            )}
+            <div className="modal-actions-right">
+              <button type="button" onClick={onClose} className="btn-cancel">取消</button>
+              <button type="submit" className="btn-submit">{existingRecord ? '更新記錄' : '確認記錄'}</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 // Main App Component
 const MobileApp: React.FC = () => {
   const { user, displayName, signOut } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabType>('home');
+  const [activeTab, setActiveTab] = useState<TabType>('scan');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [activeCareTab, setActiveCareTab] = useState<CareTabType>('patrol');
   
   const [patients, setPatients] = useState<Patient[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const [manualBedInput, setManualBedInput] = useState('');
   
+  // Records
   const [patrolRounds, setPatrolRounds] = useState<PatrolRound[]>([]);
   const [diaperRecords, setDiaperRecords] = useState<DiaperChangeRecord[]>([]);
   const [positionRecords, setPositionRecords] = useState<PositionChangeRecord[]>([]);
   const [restraintRecords, setRestraintRecords] = useState<RestraintObservationRecord[]>([]);
   
-  const [weekStartDate, setWeekStartDate] = useState(() => {
-    const now = new Date();
-    const day = now.getDay();
-    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(now.setDate(diff));
-  });
+  // Modal state
+  const [modalType, setModalType] = useState<ModalType>(null);
+  const [modalTimeSlot, setModalTimeSlot] = useState('');
+  const [modalExistingRecord, setModalExistingRecord] = useState<any>(null);
+  
+  // Date navigation: yesterday, today, tomorrow
+  const [selectedDate, setSelectedDate] = useState(getHongKongDateString());
+  
+  const today = getHongKongDateString();
+  const yesterday = (() => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().split('T')[0];
+  })();
+  const tomorrow = (() => {
+    const d = new Date(today);
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  })();
 
-  const weekDates = useMemo(() => {
-    const dates: Date[] = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(weekStartDate);
-      date.setDate(weekStartDate.getDate() + i);
-      dates.push(date);
-    }
-    return dates;
-  }, [weekStartDate]);
-
-  const formatDate = (date: Date) => date.toISOString().split('T')[0];
-
+  // Load patients
   useEffect(() => {
     const loadPatients = async () => {
       try {
@@ -265,18 +691,16 @@ const MobileApp: React.FC = () => {
     loadPatients();
   }, []);
 
+  // Load records when patient selected
   useEffect(() => {
     if (!selectedPatient) return;
     
     const loadRecords = async () => {
-      const startDate = formatDate(weekDates[0]);
-      const endDate = formatDate(weekDates[6]);
-      
       const [patrol, diaper, position, restraint] = await Promise.all([
-        supabase.from('patrol_rounds').select('*').eq('patient_id', selectedPatient.院友id).gte('patrol_date', startDate).lte('patrol_date', endDate),
-        supabase.from('diaper_change_records').select('*').eq('patient_id', selectedPatient.院友id).gte('change_date', startDate).lte('change_date', endDate),
-        supabase.from('position_change_records').select('*').eq('patient_id', selectedPatient.院友id).gte('change_date', startDate).lte('change_date', endDate),
-        supabase.from('restraint_observation_records').select('*').eq('patient_id', selectedPatient.院友id).gte('observation_date', startDate).lte('observation_date', endDate),
+        supabase.from('patrol_rounds').select('*').eq('patient_id', selectedPatient.院友id).eq('patrol_date', selectedDate),
+        supabase.from('diaper_change_records').select('*').eq('patient_id', selectedPatient.院友id).eq('change_date', selectedDate),
+        supabase.from('position_change_records').select('*').eq('patient_id', selectedPatient.院友id).eq('change_date', selectedDate),
+        supabase.from('restraint_observation_records').select('*').eq('patient_id', selectedPatient.院友id).eq('observation_date', selectedDate),
       ]);
       
       if (patrol.data) setPatrolRounds(patrol.data);
@@ -286,7 +710,14 @@ const MobileApp: React.FC = () => {
     };
     
     loadRecords();
-  }, [selectedPatient, weekDates]);
+  }, [selectedPatient, selectedDate]);
+
+  // Calculate overdue status for patients
+  const patientOverdueStatus = useMemo(() => {
+    const status: Record<number, boolean> = {};
+    // This would require loading all records for all patients - simplified for now
+    return status;
+  }, [patients]);
 
   const filteredPatients = patients.filter(p => 
     searchQuery === '' ||
@@ -304,21 +735,125 @@ const MobileApp: React.FC = () => {
     return age;
   };
 
-  const handleSearch = () => {
-    if (!manualBedInput.trim()) return;
-    const found = patients.find(p => 
-      p.床號.toLowerCase() === manualBedInput.toLowerCase() ||
-      p.中文姓名.includes(manualBedInput)
-    );
-    if (found) {
-      setSelectedPatient(found);
-      setManualBedInput('');
-    } else {
-      alert('找不到符合的院友');
+  // CRUD operations
+  const handlePatrolSubmit = async (data: any) => {
+    try {
+      if (modalExistingRecord) {
+        await supabase.from('patrol_rounds').update(data).eq('id', modalExistingRecord.id);
+      } else {
+        await supabase.from('patrol_rounds').insert([data]);
+      }
+      // Reload
+      const { data: newData } = await supabase.from('patrol_rounds').select('*').eq('patient_id', selectedPatient!.院友id).eq('patrol_date', selectedDate);
+      if (newData) setPatrolRounds(newData);
+      setModalType(null);
+    } catch (e) {
+      console.error('Error saving patrol:', e);
     }
   };
 
-  // Home Tab
+  const handlePatrolDelete = async (id: string) => {
+    if (confirm('確定刪除此記錄？')) {
+      await supabase.from('patrol_rounds').delete().eq('id', id);
+      setPatrolRounds(prev => prev.filter(r => r.id !== id));
+      setModalType(null);
+    }
+  };
+
+  const handleDiaperSubmit = async (data: any) => {
+    try {
+      if (modalExistingRecord) {
+        await supabase.from('diaper_change_records').update(data).eq('id', modalExistingRecord.id);
+      } else {
+        await supabase.from('diaper_change_records').insert([data]);
+      }
+      const { data: newData } = await supabase.from('diaper_change_records').select('*').eq('patient_id', selectedPatient!.院友id).eq('change_date', selectedDate);
+      if (newData) setDiaperRecords(newData);
+      setModalType(null);
+    } catch (e) {
+      console.error('Error saving diaper:', e);
+    }
+  };
+
+  const handleDiaperDelete = async (id: string) => {
+    if (confirm('確定刪除此記錄？')) {
+      await supabase.from('diaper_change_records').delete().eq('id', id);
+      setDiaperRecords(prev => prev.filter(r => r.id !== id));
+      setModalType(null);
+    }
+  };
+
+  const handleRestraintSubmit = async (data: any) => {
+    try {
+      if (modalExistingRecord) {
+        await supabase.from('restraint_observation_records').update(data).eq('id', modalExistingRecord.id);
+      } else {
+        await supabase.from('restraint_observation_records').insert([data]);
+      }
+      const { data: newData } = await supabase.from('restraint_observation_records').select('*').eq('patient_id', selectedPatient!.院友id).eq('observation_date', selectedDate);
+      if (newData) setRestraintRecords(newData);
+      setModalType(null);
+    } catch (e) {
+      console.error('Error saving restraint:', e);
+    }
+  };
+
+  const handleRestraintDelete = async (id: string) => {
+    if (confirm('確定刪除此記錄？')) {
+      await supabase.from('restraint_observation_records').delete().eq('id', id);
+      setRestraintRecords(prev => prev.filter(r => r.id !== id));
+      setModalType(null);
+    }
+  };
+
+  const handlePositionSubmit = async (data: any) => {
+    try {
+      if (modalExistingRecord) {
+        await supabase.from('position_change_records').update(data).eq('id', modalExistingRecord.id);
+      } else {
+        await supabase.from('position_change_records').insert([data]);
+      }
+      const { data: newData } = await supabase.from('position_change_records').select('*').eq('patient_id', selectedPatient!.院友id).eq('change_date', selectedDate);
+      if (newData) setPositionRecords(newData);
+      setModalType(null);
+    } catch (e) {
+      console.error('Error saving position:', e);
+    }
+  };
+
+  const handlePositionDelete = async (id: string) => {
+    if (confirm('確定刪除此記錄？')) {
+      await supabase.from('position_change_records').delete().eq('id', id);
+      setPositionRecords(prev => prev.filter(r => r.id !== id));
+      setModalType(null);
+    }
+  };
+
+  const openModal = (type: ModalType, timeSlot: string, existingRecord?: any) => {
+    setModalType(type);
+    setModalTimeSlot(timeSlot);
+    setModalExistingRecord(existingRecord || null);
+  };
+
+  // Scan Tab
+  const renderScanTab = () => (
+    <div className="scan-container">
+      <div className="scan-card">
+        <div className="scan-icon">
+          <QrCode size={48} color="#2563eb" />
+        </div>
+        <h2>QR Code 掃描</h2>
+        <p>請使用手機相機掃描床位 QR Code</p>
+        
+        <div className="tip-box">
+          <Info size={20} color="#2563eb" />
+          <p>掃描床位 QR Code 後將自動跳轉至對應院友的護理記錄頁面</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Home Tab - Patient List
   const renderHomeTab = () => (
     <div className="tab-content">
       <div className="page-header">
@@ -388,40 +923,6 @@ const MobileApp: React.FC = () => {
     </div>
   );
 
-  // Scan Tab
-  const renderScanTab = () => (
-    <div className="scan-container">
-      <div className="scan-card">
-        <div className="scan-icon">
-          <QrCode size={48} color="#2563eb" />
-        </div>
-        <h2>QR Code 掃描</h2>
-        <p>在手機 App 上使用相機掃描床位 QR Code</p>
-        
-        <div className="divider"><span>或</span></div>
-        
-        <p className="manual-label">手動輸入床號/院友姓名</p>
-        <div className="manual-input-group">
-          <input
-            type="text"
-            placeholder="例如: A01 或 陳大明"
-            value={manualBedInput}
-            onChange={(e) => setManualBedInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          />
-          <button onClick={handleSearch} className="search-btn">
-            <Search size={20} />
-          </button>
-        </div>
-        
-        <div className="tip-box">
-          <Info size={20} color="#2563eb" />
-          <p>提示：在真實手機上使用此 App 可以直接掃描 QR Code</p>
-        </div>
-      </div>
-    </div>
-  );
-
   // Settings Tab
   const renderSettingsTab = () => (
     <div className="settings-container">
@@ -480,10 +981,8 @@ const MobileApp: React.FC = () => {
       { id: 'position' as CareTabType, label: '轉身', Icon: RotateCcw },
       { id: 'toilet_training' as CareTabType, label: '如廁', Icon: GraduationCap },
     ];
-    
-    const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
 
-    const renderTable = () => {
+    const renderWorkflowTable = () => {
       const slots = activeCareTab === 'diaper' ? DIAPER_SLOTS : TIME_SLOTS;
       
       if (activeCareTab === 'intake_output' || activeCareTab === 'toilet_training') {
@@ -497,95 +996,105 @@ const MobileApp: React.FC = () => {
       }
       
       return (
-        <div className="table-wrapper">
-          <table className="care-table">
-            <thead>
-              <tr>
-                <th className="time-header">時段</th>
-                {weekDates.map((date, idx) => (
-                  <th key={idx}>
-                    <div>{date.getMonth()+1}/{date.getDate()}</div>
-                    <div className="weekday">({weekdays[date.getDay()]})</div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {slots.map((slot, slotIdx) => (
-                <tr key={slot}>
-                  <td className="time-cell">{slot}</td>
-                  {weekDates.map((date, dateIdx) => {
-                    const dateStr = formatDate(date);
-                    let record: any = null;
-                    let content = null;
-                    let cellClass = '';
-                    
-                    if (activeCareTab === 'patrol') {
-                      record = patrolRounds.find(r => r.patrol_date === dateStr && r.scheduled_time === slot);
-                      if (record) {
-                        cellClass = 'cell-green';
-                        content = (
-                          <>
-                            <Check size={16} color="#16a34a" />
-                            <span className="recorder">{record.recorder}</span>
-                          </>
-                        );
-                      } else {
-                        content = <span className="pending">待巡</span>;
-                      }
-                    } else if (activeCareTab === 'diaper') {
-                      record = diaperRecords.find(r => r.change_date === dateStr && r.time_slot === slot);
-                      if (record) {
-                        cellClass = 'cell-blue';
-                        content = (
-                          <>
-                            <span className="diaper-text">
-                              {record.has_urine && '小'}{record.has_urine && record.has_stool && '/'}{record.has_stool && '大'}{record.has_none && '無'}
-                            </span>
-                            <span className="recorder">{record.recorder}</span>
-                          </>
-                        );
-                      } else {
-                        content = <span className="pending">待記錄</span>;
-                      }
-                    } else if (activeCareTab === 'position') {
-                      record = positionRecords.find(r => r.change_date === dateStr && r.scheduled_time === slot);
-                      const positions = ['左', '平', '右'];
-                      const expected = positions[slotIdx % 3];
-                      if (record) {
-                        cellClass = 'cell-purple';
-                        content = (
-                          <>
-                            <span className="position-text">{record.position}</span>
-                            <span className="recorder">{record.recorder}</span>
-                          </>
-                        );
-                      } else {
-                        content = <span className="pending">[{expected}]</span>;
-                      }
-                    } else if (activeCareTab === 'restraint') {
-                      record = restraintRecords.find(r => r.observation_date === dateStr && r.scheduled_time === slot);
-                      if (record) {
-                        const statusClasses: Record<string, string> = { N: 'cell-green', P: 'cell-red', S: 'cell-yellow' };
-                        const statusText: Record<string, string> = { N: '🟢N', P: '🔴P', S: '🟠S' };
-                        cellClass = statusClasses[record.observation_status] || '';
-                        content = (
-                          <>
-                            <span className="status-text">{statusText[record.observation_status]}</span>
-                            <span className="recorder">{record.recorder}</span>
-                          </>
-                        );
-                      } else {
-                        content = <span className="pending">待觀察</span>;
-                      }
-                    }
-                    
-                    return <td key={dateIdx} className={`data-cell ${cellClass}`}>{content}</td>;
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="workflow-table">
+          {slots.map((slot, slotIdx) => {
+            let record: any = null;
+            let isOverdue = false;
+            let cellContent = null;
+            let cellClass = 'workflow-cell';
+            
+            if (activeCareTab === 'patrol') {
+              record = patrolRounds.find(r => r.scheduled_time === slot);
+              isOverdue = !record && isTimeSlotOverdue(selectedDate, slot);
+              
+              if (record) {
+                cellClass += ' completed';
+                cellContent = (
+                  <>
+                    <CheckCircle size={20} color="#16a34a" />
+                    <span className="cell-staff">{record.recorder}</span>
+                    <span className="cell-time">{record.patrol_time}</span>
+                  </>
+                );
+              } else {
+                cellClass += ' pending';
+                cellContent = <span className="cell-pending">待巡</span>;
+              }
+            } else if (activeCareTab === 'diaper') {
+              record = diaperRecords.find(r => r.time_slot === slot);
+              isOverdue = !record && isTimeSlotOverdue(selectedDate, slot);
+              
+              if (record) {
+                cellClass += ' completed-blue';
+                cellContent = (
+                  <>
+                    <span className="diaper-result">
+                      {record.has_urine && '小'}{record.has_urine && record.has_stool && '/'}{record.has_stool && '大'}{record.has_none && '無'}
+                    </span>
+                    <span className="cell-staff">{record.recorder}</span>
+                  </>
+                );
+              } else {
+                cellClass += ' pending';
+                cellContent = <span className="cell-pending">待記錄</span>;
+              }
+            } else if (activeCareTab === 'restraint') {
+              record = restraintRecords.find(r => r.scheduled_time === slot);
+              isOverdue = !record && isTimeSlotOverdue(selectedDate, slot);
+              
+              if (record) {
+                const statusClass = record.observation_status === 'N' ? 'completed' : record.observation_status === 'P' ? 'completed-red' : 'completed-yellow';
+                cellClass += ` ${statusClass}`;
+                const statusIcon = record.observation_status === 'N' ? '🟢' : record.observation_status === 'P' ? '🔴' : '🟠';
+                cellContent = (
+                  <>
+                    <span className="status-icon">{statusIcon} {record.observation_status}</span>
+                    <span className="cell-staff">{record.recorder}</span>
+                  </>
+                );
+              } else {
+                cellClass += ' pending';
+                cellContent = <span className="cell-pending">待觀察</span>;
+              }
+            } else if (activeCareTab === 'position') {
+              record = positionRecords.find(r => r.scheduled_time === slot);
+              isOverdue = !record && isTimeSlotOverdue(selectedDate, slot);
+              const positions = ['左', '平', '右'];
+              const expected = positions[slotIdx % 3];
+              
+              if (record) {
+                cellClass += ' completed-purple';
+                cellContent = (
+                  <>
+                    <span className="position-result">{record.position}</span>
+                    <span className="cell-staff">{record.recorder}</span>
+                  </>
+                );
+              } else {
+                cellClass += ' pending';
+                cellContent = <span className="cell-pending">[{expected}]</span>;
+              }
+            }
+
+            return (
+              <button
+                key={slot}
+                className={cellClass}
+                onClick={() => {
+                  if (activeCareTab === 'patrol') openModal('patrol', slot, record);
+                  else if (activeCareTab === 'diaper') openModal('diaper', slot, record);
+                  else if (activeCareTab === 'restraint') openModal('restraint', slot, record);
+                  else if (activeCareTab === 'position') openModal('position', slot, record);
+                }}
+              >
+                {isOverdue && <span className="overdue-dot"></span>}
+                <div className="cell-time-slot">{slot}</div>
+                <div className="cell-content">
+                  {cellContent}
+                </div>
+              </button>
+            );
+          })}
         </div>
       );
     };
@@ -622,34 +1131,88 @@ const MobileApp: React.FC = () => {
           ))}
         </div>
         
-        <div className="week-nav">
-          <button onClick={() => {
-            const prev = new Date(weekStartDate);
-            prev.setDate(prev.getDate() - 7);
-            setWeekStartDate(prev);
-          }}>
-            <ChevronLeft size={16} />上週
+        <div className="date-nav">
+          <button 
+            className={`date-btn ${selectedDate === yesterday ? 'active' : ''}`}
+            onClick={() => setSelectedDate(yesterday)}
+          >
+            <ChevronLeft size={16} />
+            昨天
           </button>
-          <button className="current" onClick={() => {
-            const now = new Date();
-            const day = now.getDay();
-            const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-            setWeekStartDate(new Date(now.setDate(diff)));
-          }}>本週</button>
-          <button onClick={() => {
-            const next = new Date(weekStartDate);
-            next.setDate(next.getDate() + 7);
-            setWeekStartDate(next);
-          }}>下週<ChevronRight size={16} /></button>
+          <button 
+            className={`date-btn current ${selectedDate === today ? 'active' : ''}`}
+            onClick={() => setSelectedDate(today)}
+          >
+            今天
+          </button>
+          <button 
+            className={`date-btn ${selectedDate === tomorrow ? 'active' : ''}`}
+            onClick={() => setSelectedDate(tomorrow)}
+          >
+            明天
+            <ChevronRight size={16} />
+          </button>
         </div>
         
-        <div className="date-range">
-          📅 {formatDate(weekDates[0])} - {formatDate(weekDates[6])}
+        <div className="date-display">
+          <Calendar size={16} />
+          {selectedDate}
         </div>
         
         <div className="table-container">
-          {renderTable()}
+          {renderWorkflowTable()}
         </div>
+
+        {/* Modals */}
+        {modalType === 'patrol' && selectedPatient && (
+          <PatrolModal
+            patient={selectedPatient}
+            date={selectedDate}
+            timeSlot={modalTimeSlot}
+            staffName={displayName || ''}
+            existingRecord={modalExistingRecord}
+            onClose={() => setModalType(null)}
+            onSubmit={handlePatrolSubmit}
+            onDelete={handlePatrolDelete}
+          />
+        )}
+        {modalType === 'diaper' && selectedPatient && (
+          <DiaperModal
+            patient={selectedPatient}
+            date={selectedDate}
+            timeSlot={modalTimeSlot}
+            staffName={displayName || ''}
+            existingRecord={modalExistingRecord}
+            onClose={() => setModalType(null)}
+            onSubmit={handleDiaperSubmit}
+            onDelete={handleDiaperDelete}
+          />
+        )}
+        {modalType === 'restraint' && selectedPatient && (
+          <RestraintModal
+            patient={selectedPatient}
+            date={selectedDate}
+            timeSlot={modalTimeSlot}
+            staffName={displayName || ''}
+            existingRecord={modalExistingRecord}
+            onClose={() => setModalType(null)}
+            onSubmit={handleRestraintSubmit}
+            onDelete={handleRestraintDelete}
+          />
+        )}
+        {modalType === 'position' && selectedPatient && (
+          <PositionModal
+            patient={selectedPatient}
+            date={selectedDate}
+            timeSlot={modalTimeSlot}
+            staffName={displayName || ''}
+            existingRecord={modalExistingRecord}
+            onClose={() => setModalType(null)}
+            onSubmit={handlePositionSubmit}
+            onDelete={handlePositionDelete}
+            suggestedPosition={(['左', '平', '右'] as const)[TIME_SLOTS.indexOf(modalTimeSlot) % 3]}
+          />
+        )}
       </div>
     );
   };
@@ -661,8 +1224,8 @@ const MobileApp: React.FC = () => {
           renderCareRecords()
         ) : (
           <>
-            {activeTab === 'home' && renderHomeTab()}
             {activeTab === 'scan' && renderScanTab()}
+            {activeTab === 'home' && renderHomeTab()}
             {activeTab === 'settings' && renderSettingsTab()}
           </>
         )}
@@ -670,13 +1233,13 @@ const MobileApp: React.FC = () => {
       
       {!selectedPatient && (
         <div className="bottom-tabs">
-          <button onClick={() => setActiveTab('home')} className={activeTab === 'home' ? 'active' : ''}>
-            <Home size={24} />
-            <span>院友列表</span>
-          </button>
           <button onClick={() => setActiveTab('scan')} className={activeTab === 'scan' ? 'active' : ''}>
             <QrCode size={24} />
             <span>掃描</span>
+          </button>
+          <button onClick={() => setActiveTab('home')} className={activeTab === 'home' ? 'active' : ''}>
+            <Home size={24} />
+            <span>院友列表</span>
           </button>
           <button onClick={() => setActiveTab('settings')} className={activeTab === 'settings' ? 'active' : ''}>
             <Settings size={24} />
