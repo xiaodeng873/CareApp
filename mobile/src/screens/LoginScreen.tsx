@@ -105,6 +105,9 @@ const LoginScreen: React.FC = () => {
             ]}
             onPress={handleLogin}
             disabled={loading}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="登入按鈕"
           >
             {loading ? (
               <ActivityIndicator color="#ffffff" />
