@@ -145,13 +145,13 @@ const ScanScreen: React.FC = () => {
         <Text style={styles.webTitle}>掃描床位 QR Code</Text>
         <Text style={styles.webSubtitle}>點擊下方按鈕開始掃描</Text>
 
-        <TouchableOpacity
+        <Pressable
           style={styles.scanButton}
           onPress={() => Alert.alert('提示', '相機掃描功能需要在真實手機上使用')}
         >
           <Ionicons name="camera" size={24} color="#ffffff" />
           <Text style={styles.scanButtonText}>開始掃描</Text>
-        </TouchableOpacity>
+        </Pressable>
 
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
@@ -159,28 +159,14 @@ const ScanScreen: React.FC = () => {
           <View style={styles.dividerLine} />
         </View>
 
-        <Text style={styles.manualTitle}>手動輸入床號/院友姓名</Text>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            value={manualInput}
-            onChangeText={setManualInput}
-            placeholder="例如: A01 或 陳大明"
-            placeholderTextColor="#9ca3af"
-            onSubmitEditing={handleManualSearch}
-          />
-          <TouchableOpacity
-            style={[styles.searchButton, loading && styles.searchButtonDisabled]}
-            onPress={handleManualSearch}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" color="#ffffff" />
-            ) : (
-              <Ionicons name="search" size={20} color="#ffffff" />
-            )}
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.manualTitle}>從院友列表選擇</Text>
+        <Pressable
+          style={styles.listButton}
+          onPress={() => navigation.navigate('Home')}
+        >
+          <Ionicons name="list" size={24} color="#2563eb" />
+          <Text style={styles.listButtonText}>前往院友列表</Text>
+        </Pressable>
       </View>
     </View>
   );
