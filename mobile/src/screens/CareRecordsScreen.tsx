@@ -104,20 +104,25 @@ const CareRecordsScreen: React.FC = () => {
     loadData(true);
   };
 
-  const handlePreviousWeek = () => {
-    const prevWeek = new Date(weekStartDate);
-    prevWeek.setDate(prevWeek.getDate() - 7);
-    setWeekStartDate(prevWeek);
+  const handlePreviousDay = () => {
+    const prevDay = new Date(selectedDate);
+    prevDay.setDate(prevDay.getDate() - 1);
+    setSelectedDate(prevDay);
   };
 
-  const handleNextWeek = () => {
-    const nextWeek = new Date(weekStartDate);
-    nextWeek.setDate(nextWeek.getDate() + 7);
-    setWeekStartDate(nextWeek);
+  const handleNextDay = () => {
+    const nextDay = new Date(selectedDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    setSelectedDate(nextDay);
   };
 
-  const handleCurrentWeek = () => {
-    setWeekStartDate(getWeekStartDate());
+  const handleToday = () => {
+    setSelectedDate(new Date());
+  };
+
+  const isToday = () => {
+    const today = new Date();
+    return formatDate(today) === formatDate(selectedDate);
   };
 
   const handleCellPress = (date: string, timeSlot: string, existingRecord?: any) => {
