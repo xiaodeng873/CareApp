@@ -283,55 +283,50 @@ const CareRecordsScreen: React.FC = () => {
   );
 
   const renderDiaperTable = () => (
-    <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-      <View>
-        {renderDateHeader()}
-        {DIAPER_CHANGE_SLOTS.map((slot) => (
+    <View>
+      {renderDateHeader()}
+      {DIAPER_CHANGE_SLOTS.map((slot) => {
+        const dateString = selectedDateString;
+        const record = diaperChangeRecords.find(
+          (r) => r.change_date === dateString && r.time_slot === slot.time
+        );
+        const timeStr = slot.time.split('-')[0];
+        const inHospital = isInHospital(patient, dateString, timeStr, admissionRecords);
+
+        return (
           <View key={slot.time} style={styles.tableRow}>
             <View style={styles.timeSlotCell}>
               <Text style={styles.timeSlotText}>{slot.label}</Text>
             </View>
-            {weekDates.map((date, index) => {
-              const dateString = weekDateStrings[index];
-              const record = diaperChangeRecords.find(
-                (r) => r.change_date === dateString && r.time_slot === slot.time
-              );
-              const timeStr = slot.time.split('-')[0];
-              const inHospital = isInHospital(patient, dateString, timeStr, admissionRecords);
-
-              return (
-                <TouchableOpacity
-                  key={dateString}
-                  style={[
-                    styles.dataCell,
-                    inHospital && styles.hospitalCell,
-                    record && !inHospital && styles.completedCellBlue,
-                  ]}
-                  onPress={() => !inHospital && handleCellPress(dateString, slot.time, record)}
-                  disabled={inHospital}
-                >
-                  {inHospital ? (
-                    <Text style={styles.hospitalText}>入院</Text>
-                  ) : record ? (
-                    <View style={styles.completedContent}>
-                      <Text style={styles.diaperText}>
-                        {record.has_urine && '小'}
-                        {record.has_urine && record.has_stool && '/'}
-                        {record.has_stool && '大'}
-                        {record.has_none && '無'}
-                      </Text>
-                      <Text style={styles.recorderText}>{record.recorder}</Text>
-                    </View>
-                  ) : (
-                    <Text style={styles.pendingText}>待記錄</Text>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
+            <TouchableOpacity
+              style={[
+                styles.singleDataCell,
+                inHospital && styles.hospitalCell,
+                record && !inHospital && styles.completedCellBlue,
+              ]}
+              onPress={() => !inHospital && handleCellPress(dateString, slot.time, record)}
+              disabled={inHospital}
+            >
+              {inHospital ? (
+                <Text style={styles.hospitalText}>入院</Text>
+              ) : record ? (
+                <View style={styles.completedContent}>
+                  <Text style={styles.diaperText}>
+                    {record.has_urine && '小'}
+                    {record.has_urine && record.has_stool && '/'}
+                    {record.has_stool && '大'}
+                    {record.has_none && '無'}
+                  </Text>
+                  <Text style={styles.recorderText}>{record.recorder}</Text>
+                </View>
+              ) : (
+                <Text style={styles.pendingText}>待記錄</Text>
+              )}
+            </TouchableOpacity>
           </View>
-        ))}
-      </View>
-    </ScrollView>
+        );
+      })}
+    </View>
   );
 
   const renderRestraintTable = () => (
