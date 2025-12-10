@@ -15,56 +15,6 @@ import { getBedByQrCodeId, getPatientByBedId } from '../lib/database';
 const ScanScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(false);
-  const [manualInput, setManualInput] = useState('');
-  const [showManualInput, setShowManualInput] = useState(Platform.OS === 'web');
-
-  // Web 平台使用手動輸入床號
-  const handleManualSearch = async () => {
-    if (!manualInput.trim()) {
-      Alert.alert('錯誤', '請輸入床號');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const beds = await getBeds();
-      const patients = await getPatients();
-
-      // 先查找床位
-      const bed = beds.find(b => b.bed_number.toLowerCase() === manualInput.trim().toLowerCase());
-
-      if (bed) {
-        // 找到床位，查找對應的院友
-        const patient = patients.find(p => p.bed_id === bed.id);
-        if (patient) {
-          navigation.navigate('CareRecords', { patient });
-          setManualInput('');
-          return;
-        } else {
-          Alert.alert('床位空置', `床位 ${bed.bed_number} 目前沒有在住院友`);
-        }
-      } else {
-        // 嘗試按姓名搜尋
-        const patient = patients.find(p => 
-          p.中文姓名.includes(manualInput.trim()) ||
-          p.床號.toLowerCase() === manualInput.trim().toLowerCase()
-        );
-        
-        if (patient) {
-          navigation.navigate('CareRecords', { patient });
-          setManualInput('');
-          return;
-        }
-
-        Alert.alert('找不到', '找不到符合的床位或院友');
-      }
-    } catch (error) {
-      console.error('搜尋失敗:', error);
-      Alert.alert('錯誤', '搜尋失敗，請重試');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleQRCodeScan = async (data: string) => {
     setLoading(true);
