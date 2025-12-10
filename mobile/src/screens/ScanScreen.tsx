@@ -115,28 +115,14 @@ const ScanScreen: React.FC = () => {
             <View style={styles.dividerLine} />
           </View>
 
-          <Text style={styles.manualTitle}>手動輸入床號/院友姓名</Text>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              value={manualInput}
-              onChangeText={setManualInput}
-              placeholder="例如: A01 或 陳大明"
-              placeholderTextColor="#9ca3af"
-              onSubmitEditing={handleManualSearch}
-            />
-            <TouchableOpacity
-              style={[styles.searchButton, loading && styles.searchButtonDisabled]}
-              onPress={handleManualSearch}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#ffffff" />
-              ) : (
-                <Ionicons name="search" size={20} color="#ffffff" />
-              )}
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.manualTitle}>從院友列表選擇</Text>
+          <Pressable
+            style={styles.listButton}
+            onPress={() => navigation.navigate('Home')}
+          >
+            <Ionicons name="list" size={24} color="#2563eb" />
+            <Text style={styles.listButtonText}>前往院友列表</Text>
+          </Pressable>
 
           <View style={styles.tipBox}>
             <Ionicons name="information-circle" size={20} color="#2563eb" />
