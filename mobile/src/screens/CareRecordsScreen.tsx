@@ -54,7 +54,7 @@ const CareRecordsScreen: React.FC = () => {
   const patient: Patient = route.params?.patient;
 
   const [activeTab, setActiveTab] = useState<TabType>('patrol');
-  const [weekStartDate, setWeekStartDate] = useState(getWeekStartDate());
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -65,8 +65,7 @@ const CareRecordsScreen: React.FC = () => {
   const [restraintAssessments, setRestraintAssessments] = useState<PatientRestraintAssessment[]>([]);
   const [admissionRecords, setAdmissionRecords] = useState<PatientAdmissionRecord[]>([]);
 
-  const weekDates = useMemo(() => generateWeekDates(weekStartDate), [weekStartDate]);
-  const weekDateStrings = useMemo(() => weekDates.map(formatDate), [weekDates]);
+  const selectedDateString = useMemo(() => formatDate(selectedDate), [selectedDate]);
 
   const loadData = async (silent = false) => {
     if (!silent) setLoading(true);
