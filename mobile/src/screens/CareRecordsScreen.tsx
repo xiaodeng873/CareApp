@@ -242,49 +242,44 @@ const CareRecordsScreen: React.FC = () => {
   };
 
   const renderPatrolTable = () => (
-    <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-      <View>
-        {renderDateHeader()}
-        {TIME_SLOTS.map((timeSlot) => (
+    <View>
+      {renderDateHeader()}
+      {TIME_SLOTS.map((timeSlot) => {
+        const dateString = selectedDateString;
+        const record = patrolRounds.find(
+          (r) => r.patrol_date === dateString && r.scheduled_time === timeSlot
+        );
+        const inHospital = isInHospital(patient, dateString, timeSlot, admissionRecords);
+
+        return (
           <View key={timeSlot} style={styles.tableRow}>
             <View style={styles.timeSlotCell}>
               <Text style={styles.timeSlotText}>{timeSlot}</Text>
             </View>
-            {weekDates.map((date, index) => {
-              const dateString = weekDateStrings[index];
-              const record = patrolRounds.find(
-                (r) => r.patrol_date === dateString && r.scheduled_time === timeSlot
-              );
-              const inHospital = isInHospital(patient, dateString, timeSlot, admissionRecords);
-
-              return (
-                <TouchableOpacity
-                  key={dateString}
-                  style={[
-                    styles.dataCell,
-                    inHospital && styles.hospitalCell,
-                    record && !inHospital && styles.completedCell,
-                  ]}
-                  onPress={() => !inHospital && handleCellPress(dateString, timeSlot, record)}
-                  disabled={inHospital}
-                >
-                  {inHospital ? (
-                    <Text style={styles.hospitalText}>入院</Text>
-                  ) : record ? (
-                    <View style={styles.completedContent}>
-                      <Ionicons name="checkmark-circle" size={20} color="#16a34a" />
-                      <Text style={styles.recorderText}>{record.recorder}</Text>
-                    </View>
-                  ) : (
-                    <Text style={styles.pendingText}>待巡</Text>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
+            <TouchableOpacity
+              style={[
+                styles.singleDataCell,
+                inHospital && styles.hospitalCell,
+                record && !inHospital && styles.completedCell,
+              ]}
+              onPress={() => !inHospital && handleCellPress(dateString, timeSlot, record)}
+              disabled={inHospital}
+            >
+              {inHospital ? (
+                <Text style={styles.hospitalText}>入院</Text>
+              ) : record ? (
+                <View style={styles.completedContent}>
+                  <Ionicons name="checkmark-circle" size={24} color="#16a34a" />
+                  <Text style={styles.recorderText}>{record.recorder}</Text>
+                </View>
+              ) : (
+                <Text style={styles.pendingText}>待巡</Text>
+              )}
+            </TouchableOpacity>
           </View>
-        ))}
-      </View>
-    </ScrollView>
+        );
+      })}
+    </View>
   );
 
   const renderDiaperTable = () => (
