@@ -3,15 +3,14 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   Alert,
   ActivityIndicator,
   Platform,
-  TextInput,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { getBedByQrCodeId, getPatientByBedId, getBeds, getPatients, Patient } from '../lib/database';
+import { getBedByQrCodeId, getPatientByBedId } from '../lib/database';
 
 const ScanScreen: React.FC = () => {
   const navigation = useNavigation<any>();
