@@ -75,7 +75,7 @@ const HomeScreen: React.FC = () => {
     const age = calculateAge(item.出生日期);
 
     return (
-      <TouchableOpacity
+      <Pressable
         style={styles.patientCard}
         onPress={() => navigation.navigate('CareRecords', { patient: item })}
       >
@@ -115,7 +115,7 @@ const HomeScreen: React.FC = () => {
           </View>
         </View>
         <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-      </TouchableOpacity>
+      </Pressable>
     );
   };
 
@@ -145,9 +145,9 @@ const HomeScreen: React.FC = () => {
           placeholderTextColor="#9ca3af"
         />
         {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')}>
+          <Pressable onPress={() => setSearchQuery('')}>
             <Ionicons name="close-circle" size={20} color="#9ca3af" />
-          </TouchableOpacity>
+          </Pressable>
         )}
       </View>
 
