@@ -26,13 +26,20 @@ const LoginScreen: React.FC = () => {
       return;
     }
 
+    console.log('開始登入流程...');
     setLoading(true);
     try {
+      console.log('調用 signIn...');
       const { error } = await signIn(email.trim(), password);
+      console.log('signIn 返回:', { error });
       if (error) {
+        console.error('登入錯誤:', error);
         Alert.alert('登入失敗', error.message || '請檢查您的電子郵件和密碼');
+      } else {
+        console.log('登入成功!');
       }
     } catch (err) {
+      console.error('登入異常:', err);
       Alert.alert('錯誤', '發生未知錯誤，請稍後再試');
     } finally {
       setLoading(false);
