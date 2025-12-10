@@ -1,4 +1,4 @@
-import type { Patient, HealthAssessment, PatientHealthTask, PatientRestraintAssessment, PatientAdmissionRecord } from '../lib/database';
+import type { Patient, PatientAdmissionRecord } from '../lib/database';
 
 export const TIME_SLOTS = [
   '07:00', '09:00', '11:00', '13:00', '15:00', '17:00',
@@ -44,142 +44,11 @@ export const addRandomOffset = (baseTime: string): string => {
   return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
 };
 
-export const filterPatientsByNursingLevel = (
-  patients: Patient[],
-  level: '全護理' | '半護理' | '自理'
-): Patient[] => {
-  return patients.filter(p => p.護理等級 === level && p.在住狀態 === '在住');
-};
-
-export const filterPatientsWithRestraints = (
-  patients: Patient[],
-  restraintAssessments: PatientRestraintAssessment[]
-): Patient[] => {
-  const latestAssessments = new Map<number, PatientRestraintAssessment>();
-
-  const sortedAssessments = [...restraintAssessments].sort((a, b) => {
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-  });
-
-  sortedAssessments.forEach(assessment => {
-    if (!latestAssessments.has(assessment.patient_id)) {
-      latestAssessments.set(assessment.patient_id, assessment);
-    }
-  });
-
-  const patientIdsWithRestraints = new Set<number>();
-  latestAssessments.forEach((assessment) => {
-    patientIdsWithRestraints.add(assessment.patient_id);
-  });
-
-  return patients.filter(p =>
-    patientIdsWithRestraints.has(p.院友id) && p.在住狀態 === '在住'
-  );
-};
-
-export const filterBedriddenPatients = (
-  patients: Patient[],
-  healthAssessments: HealthAssessment[]
-): Patient[] => {
-  const latestAssessments = new Map<number, HealthAssessment>();
-
-  const sortedAssessments = [...healthAssessments].sort((a, b) => {
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-  });
-
-  sortedAssessments.forEach(assessment => {
-    if (!latestAssessments.has(assessment.patient_id)) {
-      latestAssessments.set(assessment.patient_id, assessment);
-    }
-  });
-
-  const bedriddenPatientIds = new Set<number>();
-  latestAssessments.forEach((assessment) => {
-    if (assessment.daily_activities?.最高活動能力 === '臥床') {
-      bedriddenPatientIds.add(assessment.patient_id);
-    }
-  });
-
-  return patients.filter(p =>
-    bedriddenPatientIds.has(p.院友id) && p.在住狀態 === '在住'
-  );
-};
-
-export const filterPatientsWithTubes = (
-  patients: Patient[],
-  healthTasks: PatientHealthTask[],
-  healthAssessments: HealthAssessment[]
-): Patient[] => {
-  const patientIdsWithTubes = new Set<number>();
-
-  healthTasks.forEach(task => {
-    if (task.health_record_type === '鼻胃喉更換' || task.health_record_type === '導尿管更換') {
-      patientIdsWithTubes.add(task.patient_id);
-    }
-  });
-
-  const latestAssessments = new Map<number, HealthAssessment>();
-  const sortedAssessments = [...healthAssessments].sort((a, b) => {
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-  });
-
-  sortedAssessments.forEach(assessment => {
-    if (!latestAssessments.has(assessment.patient_id)) {
-      latestAssessments.set(assessment.patient_id, assessment);
-    }
-  });
-
-  latestAssessments.forEach((assessment) => {
-    const treatmentItems = assessment.treatment_items || [];
-    if (treatmentItems.includes('導尿管') || treatmentItems.includes('鼻胃喉')) {
-      patientIdsWithTubes.add(assessment.patient_id);
-    }
-  });
-
-  return patients.filter(p =>
-    patientIdsWithTubes.has(p.院友id) && p.在住狀態 === '在住'
-  );
-};
-
-export const filterPatientsWithToiletTraining = (
-  patients: Patient[],
-  healthAssessments: HealthAssessment[]
-): Patient[] => {
-  const latestAssessments = new Map<number, HealthAssessment>();
-
-  const sortedAssessments = [...healthAssessments].sort((a, b) => {
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-  });
-
-  sortedAssessments.forEach(assessment => {
-    if (!latestAssessments.has(assessment.patient_id)) {
-      latestAssessments.set(assessment.patient_id, assessment);
-    }
-  });
-
-  const patientIdsWithTraining = new Set<number>();
-  latestAssessments.forEach((assessment) => {
-    if (assessment.toilet_training === true) {
-      patientIdsWithTraining.add(assessment.patient_id);
-    }
-  });
-
-  return patients.filter(p =>
-    patientIdsWithTraining.has(p.院友id) && p.在住狀態 === '在住'
-  );
-};
-
 export const getPositionSequence = (scheduledTime: string): '左' | '平' | '右' => {
   const positions: ('左' | '平' | '右')[] = ['左', '平', '右'];
   const timeIndex = TIME_SLOTS.indexOf(scheduledTime);
   if (timeIndex === -1) return '左';
   return positions[timeIndex % 3];
-};
-
-export const isOverdue = (dateString: string, timeString: string): boolean => {
-  const scheduledDateTime = new Date(`${dateString}T${timeString}:00`);
-  const currentDateTime = new Date();
-  return scheduledDateTime < currentDateTime;
 };
 
 export const isInHospital = (
@@ -225,8 +94,4 @@ export const formatObservationStatus = (status: 'N' | 'P' | 'S'): string => {
     default:
       return '';
   }
-};
-
-export const formatPosition = (position: '左' | '平' | '右'): string => {
-  return position;
 };
