@@ -194,21 +194,36 @@ const CareRecordsScreen: React.FC = () => {
     </ScrollView>
   );
 
-  const renderWeekNavigation = () => (
-    <View style={styles.weekNavigation}>
-      <TouchableOpacity style={styles.weekButton} onPress={handlePreviousWeek}>
-        <Ionicons name="chevron-back" size={20} color="#374151" />
-        <Text style={styles.weekButtonText}>上週</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.currentWeekButton} onPress={handleCurrentWeek}>
-        <Text style={styles.currentWeekButtonText}>本週</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.weekButton} onPress={handleNextWeek}>
-        <Text style={styles.weekButtonText}>下週</Text>
-        <Ionicons name="chevron-forward" size={20} color="#374151" />
-      </TouchableOpacity>
-    </View>
-  );
+  const renderDateNavigation = () => {
+    const formatDisplayDate = () => {
+      const d = selectedDate;
+      const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+      return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} (${weekdays[d.getDay()]})`;
+    };
+
+    return (
+      <View style={styles.dateNavigation}>
+        <TouchableOpacity style={styles.navButton} onPress={handlePreviousDay}>
+          <Ionicons name="chevron-back" size={24} color="#374151" />
+          <Text style={styles.navButtonText}>昨天</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.currentDayButton, isToday() && styles.currentDayButtonActive]} 
+          onPress={handleToday}
+        >
+          <Text style={[styles.currentDayButtonText, isToday() && styles.currentDayButtonTextActive]}>
+            {isToday() ? '今天' : formatDisplayDate()}
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.navButton} onPress={handleNextDay}>
+          <Text style={styles.navButtonText}>明天</Text>
+          <Ionicons name="chevron-forward" size={24} color="#374151" />
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   const renderDateHeader = () => (
     <View style={styles.dateHeader}>
