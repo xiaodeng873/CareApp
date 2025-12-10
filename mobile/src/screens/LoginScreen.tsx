@@ -197,6 +197,9 @@ const styles = StyleSheet.create({
   loginButtonDisabled: {
     backgroundColor: '#93c5fd',
   },
+  loginButtonPressed: {
+    backgroundColor: '#1d4ed8',
+  },
   loginButtonText: {
     color: '#ffffff',
     fontSize: 16,
