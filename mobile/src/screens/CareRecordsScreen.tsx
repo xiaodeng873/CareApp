@@ -642,6 +642,11 @@ const styles = StyleSheet.create({
     borderRightWidth: 1,
     borderRightColor: '#e5e7eb',
   },
+  singleDateCell: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
   dateDayText: {
     fontSize: 13,
     fontWeight: '600',
@@ -680,6 +685,14 @@ const styles = StyleSheet.create({
     borderRightWidth: 1,
     borderRightColor: '#e5e7eb',
     minHeight: 60,
+  },
+  singleDataCell: {
+    flex: 1,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 70,
   },
   hospitalCell: {
     backgroundColor: '#f3f4f6',
