@@ -225,23 +225,21 @@ const CareRecordsScreen: React.FC = () => {
     );
   };
 
-  const renderDateHeader = () => (
-    <View style={styles.dateHeader}>
-      <View style={styles.timeSlotHeader}>
-        <Text style={styles.timeSlotHeaderText}>時段</Text>
+  const renderDateHeader = () => {
+    const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+    const d = selectedDate;
+    return (
+      <View style={styles.dateHeader}>
+        <View style={styles.timeSlotHeader}>
+          <Text style={styles.timeSlotHeaderText}>時段</Text>
+        </View>
+        <View style={styles.singleDateCell}>
+          <Text style={styles.dateDayText}>{d.getMonth() + 1}/{d.getDate()}</Text>
+          <Text style={styles.dateWeekdayText}>({weekdays[d.getDay()]})</Text>
+        </View>
       </View>
-      {weekDates.map((date, index) => {
-        const d = new Date(date);
-        const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-        return (
-          <View key={index} style={styles.dateCell}>
-            <Text style={styles.dateDayText}>{d.getMonth() + 1}/{d.getDate()}</Text>
-            <Text style={styles.dateWeekdayText}>({weekdays[d.getDay()]})</Text>
-          </View>
-        );
-      })}
-    </View>
-  );
+    );
+  };
 
   const renderPatrolTable = () => (
     <ScrollView horizontal showsHorizontalScrollIndicator={true}>
