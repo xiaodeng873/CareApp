@@ -70,14 +70,13 @@ const CareRecordsScreen: React.FC = () => {
   const loadData = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const startDate = weekDateStrings[0];
-      const endDate = weekDateStrings[6];
+      const dateStr = selectedDateString;
 
       const [patrol, diaper, restraint, position, assessments, admissions] = await Promise.all([
-        getPatrolRoundsInDateRange(startDate, endDate),
-        getDiaperChangeRecordsInDateRange(startDate, endDate),
-        getRestraintObservationRecordsInDateRange(startDate, endDate),
-        getPositionChangeRecordsInDateRange(startDate, endDate),
+        getPatrolRoundsInDateRange(dateStr, dateStr),
+        getDiaperChangeRecordsInDateRange(dateStr, dateStr),
+        getRestraintObservationRecordsInDateRange(dateStr, dateStr),
+        getPositionChangeRecordsInDateRange(dateStr, dateStr),
         getRestraintAssessments(),
         getPatientAdmissionRecords(),
       ]);
@@ -98,7 +97,7 @@ const CareRecordsScreen: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [weekDateStrings, patient.院友id]);
+  }, [selectedDateString, patient.院友id]);
 
   const onRefresh = () => {
     setRefreshing(true);
