@@ -256,7 +256,7 @@ const CareRecordsScreen: React.FC = () => {
             <View style={styles.timeSlotCell}>
               <Text style={styles.timeSlotText}>{timeSlot}</Text>
             </View>
-            <TouchableOpacity
+            <Pressable
               style={[
                 styles.singleDataCell,
                 inHospital && styles.hospitalCell,
@@ -275,7 +275,7 @@ const CareRecordsScreen: React.FC = () => {
               ) : (
                 <Text style={styles.pendingText}>待巡</Text>
               )}
-            </TouchableOpacity>
+            </Pressable>
           </View>
         );
       })}
@@ -298,7 +298,7 @@ const CareRecordsScreen: React.FC = () => {
             <View style={styles.timeSlotCell}>
               <Text style={styles.timeSlotText}>{slot.label}</Text>
             </View>
-            <TouchableOpacity
+            <Pressable
               style={[
                 styles.singleDataCell,
                 inHospital && styles.hospitalCell,
@@ -322,7 +322,7 @@ const CareRecordsScreen: React.FC = () => {
               ) : (
                 <Text style={styles.pendingText}>待記錄</Text>
               )}
-            </TouchableOpacity>
+            </Pressable>
           </View>
         );
       })}
@@ -355,7 +355,7 @@ const CareRecordsScreen: React.FC = () => {
             <View style={styles.timeSlotCell}>
               <Text style={styles.timeSlotText}>{timeSlot}</Text>
             </View>
-            <TouchableOpacity
+            <Pressable
               style={[styles.singleDataCell, getCellStyle()]}
               onPress={() => !inHospital && handleCellPress(dateString, timeSlot, record)}
               disabled={inHospital}
@@ -378,7 +378,7 @@ const CareRecordsScreen: React.FC = () => {
               ) : (
                 <Text style={styles.pendingText}>待觀察</Text>
               )}
-            </TouchableOpacity>
+            </Pressable>
           </View>
         );
       })}
@@ -402,7 +402,7 @@ const CareRecordsScreen: React.FC = () => {
             <View style={styles.timeSlotCell}>
               <Text style={styles.timeSlotText}>{timeSlot}</Text>
             </View>
-            <TouchableOpacity
+            <Pressable
               style={[
                 styles.singleDataCell,
                 inHospital && styles.hospitalCell,
@@ -421,7 +421,7 @@ const CareRecordsScreen: React.FC = () => {
               ) : (
                 <Text style={styles.pendingText}>[{expectedPosition}]</Text>
               )}
-            </TouchableOpacity>
+            </Pressable>
           </View>
         );
       })}
