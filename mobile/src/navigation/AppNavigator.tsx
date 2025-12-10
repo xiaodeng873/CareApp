@@ -18,6 +18,7 @@ const Tab = createBottomTabNavigator();
 const MainTabs = () => {
   return (
     <Tab.Navigator
+      initialRouteName="Scan"
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home';
@@ -48,14 +49,14 @@ const MainTabs = () => {
       })}
     >
       <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{ tabBarLabel: '院友列表' }}
-      />
-      <Tab.Screen
         name="Scan"
         component={ScanScreen}
         options={{ tabBarLabel: '掃描' }}
+      />
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{ tabBarLabel: '院友列表' }}
       />
       <Tab.Screen
         name="Settings"
