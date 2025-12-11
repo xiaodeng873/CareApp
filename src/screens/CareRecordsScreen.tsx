@@ -134,6 +134,10 @@ const CareRecordsScreen: React.FC = () => {
       existingRecord,
       staffName: displayName || '未知',
       restraintAssessments: activeTab === 'restraint' ? restraintAssessments : undefined,
+      // Callback to refresh data after record is saved (optimistic update)
+      onRecordSaved: () => {
+        loadData(true); // Reload in background without showing loading state
+      },
     });
   };
 
@@ -500,7 +504,7 @@ const styles = StyleSheet.create({
   patientHeader: {
     backgroundColor: '#ffffff',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
   },
@@ -527,12 +531,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   patientName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#1f2937',
   },
   patientMeta: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#6b7280',
     marginTop: 2,
   },
@@ -540,18 +544,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
-    height: 56,
+    height: 48,
   },
   tabsContent: {
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 4,
     alignItems: 'center',
   },
   tab: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingVertical: 4,
     marginHorizontal: 6,
     borderRadius: 8,
     backgroundColor: '#f3f4f6',

@@ -172,6 +172,10 @@ const RecordDetailScreen: React.FC = () => {
           } else {
             await createPatrolRound(patrolData);
           }
+          // Optimistic update: refresh parent's data immediately
+          if (route.params?.onRecordSaved) {
+            route.params.onRecordSaved();
+          }
           break;
 
         case 'diaper':
@@ -198,6 +202,10 @@ const RecordDetailScreen: React.FC = () => {
           } else {
             await createDiaperChangeRecord(diaperData);
           }
+          // Optimistic update
+          if (route.params?.onRecordSaved) {
+            route.params.onRecordSaved();
+          }
           break;
 
         case 'restraint':
@@ -223,6 +231,10 @@ const RecordDetailScreen: React.FC = () => {
           } else {
             await createRestraintObservationRecord(restraintData);
           }
+          // Optimistic update
+          if (route.params?.onRecordSaved) {
+            route.params.onRecordSaved();
+          }
           break;
 
         case 'position':
@@ -236,6 +248,10 @@ const RecordDetailScreen: React.FC = () => {
           // Position records can only be created, not updated (per Web App design)
           if (!existingRecord) {
             await createPositionChangeRecord(positionData);
+            // Optimistic update
+            if (route.params?.onRecordSaved) {
+              route.params.onRecordSaved();
+            }
           }
           break;
       }
@@ -570,7 +586,8 @@ const RecordDetailScreen: React.FC = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#374151" />
+          <Ionicons name="arrow-back" size={20} color="#2563eb" />
+          <Text style={styles.backButtonText}>返回</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{getTitle()}</Text>
         <View style={styles.headerRight} />
@@ -654,7 +671,16 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e5e7eb',
   },
   backButton: {
-    padding: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#2563eb',
+    fontWeight: '500',
+    marginLeft: 4,
   },
   headerTitle: {
     fontSize: 18,
