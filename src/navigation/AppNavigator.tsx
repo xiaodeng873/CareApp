@@ -68,6 +68,12 @@ const MainTabs = () => {
         name="Home"
         component={HomeStack}
         options={{ tabBarLabel: '院友列表' }}
+        listeners={({ navigation }) => ({
+          tabPress: e => {
+            // When Home tab is pressed, ensure we go to the HomeScreen (pop to top)
+            navigation.navigate('Home', { screen: 'HomeScreen' });
+          },
+        })}
       />
       <Tab.Screen
         name="Settings"

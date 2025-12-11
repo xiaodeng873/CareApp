@@ -585,10 +585,6 @@ const RecordDetailScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={20} color="#2563eb" />
-          <Text style={styles.backButtonText}>返回</Text>
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>{getTitle()}</Text>
         <View style={styles.headerRight} />
       </View>
@@ -649,6 +645,12 @@ const RecordDetailScreen: React.FC = () => {
           ) : (
             <Text style={styles.saveButtonText}>{existingRecord ? '更新記錄' : '確認記錄'}</Text>
           )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.backFooterButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backFooterText}>返回</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -935,6 +937,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#ffffff',
+  },
+  backFooterButton: {
+    marginLeft: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backFooterText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
   },
 });
 
