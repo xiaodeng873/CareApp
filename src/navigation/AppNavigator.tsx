@@ -15,6 +15,17 @@ import RecordDetailScreen from '../screens/RecordDetailScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+const HomeStack = () => {
+  const Home = createNativeStackNavigator();
+  return (
+    <Home.Navigator screenOptions={{ headerShown: false }}>
+      <Home.Screen name="HomeScreen" component={HomeScreen} />
+      <Home.Screen name="CareRecords" component={CareRecordsScreen} />
+      <Home.Screen name="RecordDetail" component={RecordDetailScreen} />
+    </Home.Navigator>
+  );
+};
+
 const MainTabs = () => {
   return (
     <Tab.Navigator
@@ -55,7 +66,7 @@ const MainTabs = () => {
       />
       <Tab.Screen
         name="Home"
-        component={HomeScreen}
+        component={HomeStack}
         options={{ tabBarLabel: '院友列表' }}
       />
       <Tab.Screen
@@ -80,16 +91,6 @@ const AppNavigator = () => {
         {user ? (
           <>
             <Stack.Screen name="MainTabs" component={MainTabs} />
-            <Stack.Screen
-              name="CareRecords"
-              component={CareRecordsScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="RecordDetail"
-              component={RecordDetailScreen}
-              options={{ headerShown: false }}
-            />
           </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />
