@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../lib/i18n';
 
 import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -27,6 +28,7 @@ const HomeStack = () => {
 };
 
 const MainTabs = () => {
+  const { t } = useTranslation();
   return (
     <Tab.Navigator
       initialRouteName="Scan"
@@ -62,12 +64,12 @@ const MainTabs = () => {
       <Tab.Screen
         name="Scan"
         component={ScanScreen}
-        options={{ tabBarLabel: '掃描' }}
+        options={{ tabBarLabel: t('scan') }}
       />
       <Tab.Screen
         name="Home"
         component={HomeStack}
-        options={{ tabBarLabel: '院友列表' }}
+        options={{ tabBarLabel: t('patientList') }}
         listeners={({ navigation }) => ({
           tabPress: e => {
             // When Home tab is pressed, ensure we go to the HomeScreen (pop to top)
@@ -78,7 +80,7 @@ const MainTabs = () => {
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
-        options={{ tabBarLabel: '設定' }}
+        options={{ tabBarLabel: t('settings') }}
       />
     </Tab.Navigator>
   );

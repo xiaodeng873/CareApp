@@ -12,8 +12,10 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { getBedByQrCodeId, getPatientByBedId } from '../lib/database';
+import { useTranslation } from '../lib/i18n';
 
 const ScanScreen: React.FC = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
@@ -33,7 +35,7 @@ const ScanScreen: React.FC = () => {
       }
       
       if (!qrData.qr_code_id && !data.trim()) {
-        Alert.alert('無效的 QR Code', '請掃描有效的床位 QR Code');
+        Alert.alert(t('invalidQRCode'), t('invalidQRCodeMessage'));
         setCameraActive(true);
         return;
       }
@@ -43,7 +45,7 @@ const ScanScreen: React.FC = () => {
       // 查詢床位資訊
       const bed = await getBedByQrCodeId(qrCodeId);
       if (!bed) {
-        Alert.alert('找不到床位', `QR Code ID: ${qrCodeId}\n\n無法找到對應的床位資訊`);
+        Alert.alert(t('bedNotFound'), `QR Code ID: ${qrCodeId}\n\n${t('bedNotFoundMessage')}`);
         setCameraActive(true);
         return;
       }
@@ -51,7 +53,7 @@ const ScanScreen: React.FC = () => {
       // 查詢該床位上的院友
       const patient = await getPatientByBedId(bed.id);
       if (!patient) {
-        Alert.alert('床位空置', `床位 ${bed.bed_number} 目前沒有在住院友`);
+        Alert.alert(t('bedEmpty'), `${t('bed')} ${bed.bed_number} ${t('bedEmptyMessage')}`);
         setCameraActive(true);
         return;
       }
@@ -60,7 +62,7 @@ const ScanScreen: React.FC = () => {
       navigation.navigate('Home', { screen: 'CareRecords', params: { patient } });
     } catch (error) {
       console.error('QR Code 掃描失敗:', error);
-      Alert.alert('掃描失敗', error instanceof Error ? error.message : 'QR Code 格式無效或資料庫查詢失敗');
+      Alert.alert(t('scanFailed'), error instanceof Error ? error.message : t('scanFailedMessage'));
       setCameraActive(true);
     } finally {
       setLoading(false);
@@ -90,28 +92,28 @@ const ScanScreen: React.FC = () => {
           <View style={styles.iconCircle}>
             <Ionicons name="qr-code" size={48} color="#2563eb" />
           </View>
-          <Text style={styles.webTitle}>QR Code 掃描</Text>
-          <Text style={styles.webSubtitle}>在手機 App 上使用相機掃描床位 QR Code</Text>
+          <Text style={styles.webTitle}>{t('qrCodeScan')}</Text>
+          <Text style={styles.webSubtitle}>{t('qrCodeScanSubtitle')}</Text>
           
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>或</Text>
+            <Text style={styles.dividerText}>{t('or')}</Text>
             <View style={styles.dividerLine} />
           </View>
 
-          <Text style={styles.manualTitle}>從院友列表選擇</Text>
+          <Text style={styles.manualTitle}>{t('manualSelect')}</Text>
           <Pressable
             style={styles.listButton}
             onPress={() => navigation.navigate('Home')}
           >
             <Ionicons name="list" size={24} color="#2563eb" />
-            <Text style={styles.listButtonText}>前往院友列表</Text>
+            <Text style={styles.listButtonText}>{t('goToPatientList')}</Text>
           </Pressable>
 
           <View style={styles.tipBox}>
             <Ionicons name="information-circle" size={20} color="#2563eb" />
             <Text style={styles.tipText}>
-              提示：在真實手機上使用此 App 可以直接掃描 QR Code
+              {t('scanTip')}
             </Text>
           </View>
         </View>
@@ -125,7 +127,7 @@ const ScanScreen: React.FC = () => {
       <View style={styles.container}>
         <View style={styles.nativeContent}>
           <ActivityIndicator size="large" color="#2563eb" />
-          <Text style={styles.webSubtitle}>正在請求相機權限...</Text>
+          <Text style={styles.webSubtitle}>{t('requestingCamera')}</Text>
         </View>
       </View>
     );
@@ -136,31 +138,31 @@ const ScanScreen: React.FC = () => {
       <View style={styles.container}>
         <View style={styles.nativeContent}>
           <View style={styles.iconCircle}>
-            <Ionicons name="camera-off" size={48} color="#dc2626" />
+            <Ionicons name="camera" size={48} color="#dc2626" />
           </View>
-          <Text style={styles.webTitle}>需要相機權限</Text>
-          <Text style={styles.webSubtitle}>此應用程式需要存取您的相機以掃描 QR Code</Text>
+          <Text style={styles.webTitle}>{t('cameraPermissionRequired')}</Text>
+          <Text style={styles.webSubtitle}>{t('cameraPermissionMessage')}</Text>
           <Pressable
             style={styles.scanButton}
             onPress={requestPermission}
           >
             <Ionicons name="camera" size={24} color="#ffffff" />
-            <Text style={styles.scanButtonText}>授予相機權限</Text>
+            <Text style={styles.scanButtonText}>{t('grantPermission')}</Text>
           </Pressable>
 
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>或</Text>
+            <Text style={styles.dividerText}>{t('or')}</Text>
             <View style={styles.dividerLine} />
           </View>
 
-          <Text style={styles.manualTitle}>從院友列表選擇</Text>
+          <Text style={styles.manualTitle}>{t('manualSelect')}</Text>
           <Pressable
             style={styles.listButton}
             onPress={() => navigation.navigate('Home')}
           >
             <Ionicons name="list" size={24} color="#2563eb" />
-            <Text style={styles.listButtonText}>前往院友列表</Text>
+            <Text style={styles.listButtonText}>{t('goToPatientList')}</Text>
           </Pressable>
         </View>
       </View>
@@ -170,30 +172,31 @@ const ScanScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       {cameraActive && (
-        <CameraView
-          style={styles.camera}
-          onBarcodeScanned={({ data }) => {
-            if (cameraActive) {
-              handleQRCodeScan(data);
-            }
-          }}
-          barcodeScannerSettings={{
-            barcodeTypes: ['qr'],
-          }}
-        >
+        <>
+          <CameraView
+            style={styles.camera}
+            onBarcodeScanned={({ data }) => {
+              if (cameraActive) {
+                handleQRCodeScan(data);
+              }
+            }}
+            barcodeScannerSettings={{
+              barcodeTypes: ['qr'],
+            }}
+          />
           <View style={styles.overlay}>
             <View style={styles.scanFrame}>
               <Ionicons name="qr-code" size={120} color="#ffffff" />
-              <Text style={styles.scanText}>將二維碼置於框內</Text>
+              <Text style={styles.scanText}>{t('aimAtQRCode')}</Text>
             </View>
           </View>
-        </CameraView>
+        </>
       )}
 
       {loading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#ffffff" />
-          <Text style={styles.loadingText}>正在識別床位...</Text>
+          <Text style={styles.loadingText}>{t('loading')}</Text>
         </View>
       )}
     </View>
@@ -351,7 +354,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   overlay: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
