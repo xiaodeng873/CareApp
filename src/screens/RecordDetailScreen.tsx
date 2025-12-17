@@ -31,6 +31,7 @@ import {
   updatePositionChangeRecord,
   deletePositionChangeRecord,
 } from '../lib/database';
+import { supabase } from '../lib/supabase';
 import { addRandomOffset, getPositionSequence, STATUS_OPTIONS, isStatusNote } from '../utils/careRecordHelper';
 import { eventBus } from '../lib/eventBus';
 import { useTranslation, usePatientName } from '../lib/i18n';
@@ -200,14 +201,21 @@ const RecordDetailScreen: React.FC = () => {
   useEffect(() => {
     if (existingRecord) {
       setRecorder(existingRecord.recorder || staffName);
-        setNotes(existingRecord.notes || '');
-        setStatus(isStatusNote(existingRecord.notes) ? existingRecord.notes as any : '');
-
+      
       switch (recordType) {
         case 'patrol':
           // normalize to HH:MM (strip seconds if present)
           setPatrolTime(existingRecord.patrol_time ? String(existingRecord.patrol_time).slice(0,5) : '');
           break;
+        case 'diaper':
+        case 'restraint':
+        case 'position':
+          setNotes(existingRecord.notes || '');
+          setStatus(isStatusNote(existingRecord.notes) ? existingRecord.notes as any : '');
+          break;
+      }
+
+      switch (recordType) {
         case 'diaper':
           setHasUrine(existingRecord.has_urine || false);
           setHasStool(existingRecord.has_stool || false);
@@ -263,8 +271,8 @@ const RecordDetailScreen: React.FC = () => {
     try {
       switch (recordType) {
         case 'patrol':
-          if (!patrolTime && !status) {
-            Alert.alert('錯誤', '請輸入實際巡房時間或選擇狀態');
+          if (!patrolTime) {
+            Alert.alert('錯誤', '請輸入實際巡房時間');
             setLoading(false);
             return;
           }
@@ -272,11 +280,11 @@ const RecordDetailScreen: React.FC = () => {
             patient_id: patient.院友id,
             patrol_date: date,
             scheduled_time: timeSlot,
-            patrol_time: patrolTime ? String(patrolTime).slice(0,5) : '00:00',
+            patrol_time: String(patrolTime).slice(0,5),
             recorder: recorder.trim(),
-            notes: status ? status : (notes.trim() || undefined),
           };
           console.log('Saving patrolData:', patrolData);
+          console.log('Current user session:', (await supabase.auth.getSession()).data.session?.user?.email);
           
           // Emit optimistic update
           const optimisticPatrol = existingRecord ? { ...existingRecord, ...patrolData } : { 
@@ -294,8 +302,11 @@ const RecordDetailScreen: React.FC = () => {
           
           if (existingRecord) {
             savedRecord = await updatePatrolRound({ ...existingRecord, ...patrolData });
+            console.log('✓ Patrol round updated in Supabase:', savedRecord.id);
           } else {
             savedRecord = await createPatrolRound(patrolData);
+            console.log('✓ Patrol round created in Supabase:', savedRecord.id);
+            console.log('✓ Full saved record:', JSON.stringify(savedRecord, null, 2));
           }
           break;
 
@@ -423,6 +434,11 @@ const RecordDetailScreen: React.FC = () => {
 
       // Confirm successful save with actual record
       if (savedRecord) {
+        console.log('✓ Record confirmed saved to database');
+        console.log('  - Record ID:', savedRecord.id);
+        console.log('  - Record Type:', recordType);
+        console.log('  - Patient ID:', patient.院友id);
+        
         eventBus.emit('recordSaved', { 
           patientId: patient.院友id, 
           recordType,
@@ -433,7 +449,10 @@ const RecordDetailScreen: React.FC = () => {
 
       navigation.goBack();
     } catch (error) {
-      console.error('保存記錄失敗:', error);
+      console.error('❌ 保存記錄失敗:', error);
+      console.error('  - Error type:', error.constructor.name);
+      console.error('  - Error message:', error.message);
+      console.error('  - Full error:', JSON.stringify(error, null, 2));
       
       // Emit rollback event on error
       eventBus.emit('recordSaveFailed', { 
@@ -524,28 +543,13 @@ const RecordDetailScreen: React.FC = () => {
   const renderPatrolForm = () => (
     <>
       <View style={styles.formGroup}>
-        <Text style={styles.label}>{t('actualPatrolTime')} {!status && '*'}</Text>
+        <Text style={styles.label}>{t('actualPatrolTime')} *</Text>
         <TextInput
-          style={[styles.input, status && styles.disabledInput]}
+          style={styles.input}
           value={patrolTime}
           onChangeText={setPatrolTime}
           placeholder="HH:MM"
-          editable={!status}
         />
-      </View>
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t('noteOrStatus')}</Text>
-          <View style={styles.statusOptionsRow}>
-            {Array.from(STATUS_OPTIONS).map(opt => (
-              <TouchableOpacity
-                key={opt}
-                style={[styles.statusOptionButton, status === opt && styles.statusOptionButtonActive]}
-                onPress={() => handlePatrolStatusSelect(opt)}
-              >
-                <Text style={status === opt ? styles.statusOptionTextActive : styles.statusOptionText}>{translateOption(opt, t)}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
       </View>
     </>
   );

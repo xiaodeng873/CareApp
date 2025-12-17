@@ -227,8 +227,13 @@ export const getPatrolRoundsInDateRange = async (startDate: string, endDate: str
 };
 
 export const createPatrolRound = async (round: Omit<PatrolRound, 'id' | 'created_at' | 'updated_at'>): Promise<PatrolRound> => {
+  console.log('[DB] Creating patrol round:', round);
   const { data, error } = await supabase.from('patrol_rounds').insert([round]).select().single();
-  if (error) throw error;
+  if (error) {
+    console.error('[DB] Failed to create patrol round:', error);
+    throw error;
+  }
+  console.log('[DB] Patrol round created successfully:', data.id);
   return data;
 };
 
